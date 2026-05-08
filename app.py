@@ -212,7 +212,7 @@ app.layout = html.Div(style={"minHeight": "100vh", "backgroundColor": "#f8f9fb",
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def detect_task(series: pd.Series) -> str:
-    if series.dtype == "object" or series.nunique() <= 10:
+    if not pd.api.types.is_numeric_dtype(series) or series.nunique() <= 10:
         return "classification"
     return "regression"
 
@@ -329,7 +329,7 @@ def handle_target(target, data):
     def is_usable(col):
         if col == target:
             return False
-        if df[col].dtype == "object" and df[col].nunique() / len(df) > 0.5:
+        if not pd.api.types.is_numeric_dtype(df[col]) and df[col].nunique() / len(df) > 0.5:
             return False
         return True
 
@@ -409,8 +409,8 @@ def handle_train(n_clicks, data, target, features_json, task):
     if task == "classification":
         y = y.astype(str)
 
-    num_cols = [c for c in features if df[c].dtype != "object"]
-    cat_cols = [c for c in features if df[c].dtype == "object"]
+    num_cols = [c for c in features if pd.api.types.is_numeric_dtype(df[c])]
+    cat_cols = [c for c in features if not pd.api.types.is_numeric_dtype(df[c])]
 
     transformers = []
     if num_cols:
@@ -498,7 +498,7 @@ def _build_predict_inputs(df, features):
             "textTransform": "uppercase", "color": "#6b7280",
             "marginBottom": "6px", "display": "block",
         })
-        if df[col].dtype == "object":
+        if not pd.api.types.is_numeric_dtype(df[col]):
             unique_vals = sorted(df[col].dropna().unique().tolist())
             control = dcc.Dropdown(
                 id={"type": "pred-input", "col": col},
